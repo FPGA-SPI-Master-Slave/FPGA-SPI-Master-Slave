@@ -1,0 +1,29 @@
+# Keep only HDL sources, constraints, and simulation inputs/configuration.
+*
+!*/
+!.gitignore
+!README.md
+
+# Verilog sources and testbenches
+!*.v
+!*.vh
+!*.sv
+!*.svh
+
+# Vivado constraints
+!*.xdc
+
+# Simulation memory data and waveform configuration
+!*.mem
+!*.hex
+!*.wcfg
+
+# Vivado 2020.2 generated directories (may contain generated HDL/XDC)
+**/.Xil/
+**/*.cache/
+**/*.gen/
+**/*.runs/
+**/*.sim/
+**/*.hw/
+**/ip_user_files/
+**/xsim.dir/
