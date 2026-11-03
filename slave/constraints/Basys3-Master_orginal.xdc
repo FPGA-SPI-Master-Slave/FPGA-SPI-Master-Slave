@@ -9,8 +9,8 @@
 
 
 ## Switches
-set_property -dict { PACKAGE_PIN V17   IOSTANDARD LVCMOS33 } [get_ports { a }]
-set_property -dict { PACKAGE_PIN V16   IOSTANDARD LVCMOS33 } [get_ports { b }]
+#set_property -dict { PACKAGE_PIN V17   IOSTANDARD LVCMOS33 } [get_ports { a }]
+#set_property -dict { PACKAGE_PIN V16   IOSTANDARD LVCMOS33 } [get_ports { b }]
 #set_property -dict { PACKAGE_PIN W16   IOSTANDARD LVCMOS33 } [get_ports {sw[2]}]
 #set_property -dict { PACKAGE_PIN W17   IOSTANDARD LVCMOS33 } [get_ports {sw[3]}]
 #set_property -dict { PACKAGE_PIN W15   IOSTANDARD LVCMOS33 } [get_ports {sw[4]}]
@@ -24,11 +24,11 @@ set_property -dict { PACKAGE_PIN V16   IOSTANDARD LVCMOS33 } [get_ports { b }]
 #set_property -dict { PACKAGE_PIN W2    IOSTANDARD LVCMOS33 } [get_ports {sw[12]}]
 #set_property -dict { PACKAGE_PIN U1    IOSTANDARD LVCMOS33 } [get_ports {sw[13]}]
 #set_property -dict { PACKAGE_PIN T1    IOSTANDARD LVCMOS33 } [get_ports {sw[14]}]
-#set_property -dict { PACKAGE_PIN R2    IOSTANDARD LVCMOS33 } [get_ports {sw[15]}]
+set_property -dict { PACKAGE_PIN R2    IOSTANDARD LVCMOS33 } [get_ports {reset}]
 
 
 ## LEDs
-set_property -dict { PACKAGE_PIN U16   IOSTANDARD LVCMOS33 } [get_ports { ld0 }]
+#set_property -dict { PACKAGE_PIN U16   IOSTANDARD LVCMOS33 } [get_ports { ld0 }]
 # set_property -dict { PACKAGE_PIN E19   IOSTANDARD LVCMOS33 } [get_ports {led[1]}]
 # set_property -dict { PACKAGE_PIN U19   IOSTANDARD LVCMOS33 } [get_ports {led[2]}]
 # set_property -dict { PACKAGE_PIN V19   IOSTANDARD LVCMOS33 } [get_ports {led[3]}]
@@ -72,10 +72,10 @@ set_property -dict { PACKAGE_PIN U16   IOSTANDARD LVCMOS33 } [get_ports { ld0 }]
 
 
 ##Pmod Header JA
-#set_property -dict { PACKAGE_PIN J1   IOSTANDARD LVCMOS33 } [get_ports {JA[0]}];#Sch name = JA1
-#set_property -dict { PACKAGE_PIN L2   IOSTANDARD LVCMOS33 } [get_ports {JA[1]}];#Sch name = JA2
-#set_property -dict { PACKAGE_PIN J2   IOSTANDARD LVCMOS33 } [get_ports {JA[2]}];#Sch name = JA3
-#set_property -dict { PACKAGE_PIN G2   IOSTANDARD LVCMOS33 } [get_ports {JA[3]}];#Sch name = JA4
+set_property -dict { PACKAGE_PIN J1   IOSTANDARD LVCMOS33 } [get_ports {sclk}];# JA1
+set_property -dict { PACKAGE_PIN L2   IOSTANDARD LVCMOS33 } [get_ports {cs_n}];# JA2
+set_property -dict { PACKAGE_PIN J2   IOSTANDARD LVCMOS33 } [get_ports {mosi}];# JA3
+set_property -dict { PACKAGE_PIN G2   IOSTANDARD LVCMOS33 } [get_ports {miso}];# JA4
 #set_property -dict { PACKAGE_PIN H1   IOSTANDARD LVCMOS33 } [get_ports {JA[4]}];#Sch name = JA7
 #set_property -dict { PACKAGE_PIN K2   IOSTANDARD LVCMOS33 } [get_ports {JA[5]}];#Sch name = JA8
 #set_property -dict { PACKAGE_PIN H2   IOSTANDARD LVCMOS33 } [get_ports {JA[6]}];#Sch name = JA9
@@ -157,3 +157,10 @@ set_property CFGBVS VCCO [current_design]
 set_property BITSTREAM.GENERAL.COMPRESS TRUE [current_design]
 set_property BITSTREAM.CONFIG.CONFIGRATE 33 [current_design]
 set_property CONFIG_MODE SPIx4 [current_design]
+
+# 외부 SPI SCLK를 1MHz로 제약했음.
+create_clock -name spi_sclk -period 1000.000 \
+    -waveform {0.000 500.000} [get_ports sclk]
+
+# Pmod SCLK의 일반 배선을 허용했음.
+set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets sclk_IBUF]
