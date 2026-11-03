@@ -27,3 +27,6 @@
 **/*.hw/
 **/ip_user_files/
 **/xsim.dir/
+
+# Agents.md
+AGENTS.md
