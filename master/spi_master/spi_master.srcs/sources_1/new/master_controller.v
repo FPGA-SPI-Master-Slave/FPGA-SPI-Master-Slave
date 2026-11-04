@@ -2,21 +2,40 @@
 // 명령 다음 더미 바이트에서 상태 또는 센서 데이터를 수신함.
 // 응답 타이밍은 슬레이브와 협의 필요.
 module master_controller #(
-    parameter [7:0] CMD_STATUS = 8'h10, CMD_SEND = 8'h20,
-    parameter [7:0] RSP_BUSY = 8'h00, RSP_READY = 8'h01,
-    parameter [7:0] DUMMY = 8'h00,
+    parameter [7:0] CMD_STATUS = 8'h10,
+                    CMD_SEND = 8'h20,
+                    RSP_BUSY = 8'h00, 
+                    RSP_READY = 8'h01,
+                    DUMMY = 8'h00,
     parameter integer MAX_POLLS = 1000
 )(
-    input clk, input reset, input start, input byte_done, input [7:0] byte_rx,
-    output reg byte_start, output reg [7:0] byte_tx, output reg cs_n,
-    output reg [7:0] sensor_data, output reg data_valid,
-    output reg timeout, output reg protocol_error
+    input clk, 
+    input reset, 
+    input start, 
+    input byte_done, 
+    input [7:0] byte_rx,
+    output reg byte_start, 
+    output reg [7:0] byte_tx, 
+    output reg cs_n,
+    output reg [7:0] sensor_data, 
+    output reg data_valid,
+    output reg timeout, 
+    output reg protocol_error
 );
-    localparam IDLE=0, STATUS_START=1, STATUS_WAIT=2, RESPONSE_START=3,
-               RESPONSE_WAIT=4, SEND_START=5, SEND_WAIT=6,
-               DATA_START=7, DATA_WAIT=8;
+
+    localparam IDLE=0, 
+               STATUS_START=1, 
+               STATUS_WAIT=2, 
+               RESPONSE_START=3,
+               RESPONSE_WAIT=4, 
+               SEND_START=5, 
+               SEND_WAIT=6,
+               DATA_START=7, 
+               DATA_WAIT=8, RESTART=9;
+
     reg [3:0] state;
     reg [31:0] polls;
+
     always @(posedge clk) begin
         if (reset) begin
             state <= IDLE;
@@ -31,6 +50,7 @@ module master_controller #(
         end else begin
             byte_start <= 0;
             data_valid <= 0;
+
             case (state)
                 IDLE: if (start) begin
                     cs_n <= 0;
@@ -44,7 +64,9 @@ module master_controller #(
                     byte_start <= 1;
                     state <= STATUS_WAIT;
                 end
+                // 8비트를 전송하는데 시간이 필요하기 때문에 wait 필요.
                 STATUS_WAIT: if (byte_done) state <= RESPONSE_START;
+
                 RESPONSE_START: begin
                     byte_tx <= DUMMY;
                     byte_start <= 1;
@@ -73,6 +95,7 @@ module master_controller #(
                     state <= SEND_WAIT;
                 end
                 SEND_WAIT: if (byte_done) state <= DATA_START;
+                
                 DATA_START: begin
                     byte_tx <= DUMMY;
                     byte_start <= 1;
@@ -82,7 +105,12 @@ module master_controller #(
                     sensor_data <= byte_rx;
                     data_valid <= 1;
                     cs_n <= 1;
-                    state <= IDLE;
+                    polls <= 0;
+                    state <= RESTART;
+                end
+                RESTART: begin
+                    cs_n <= 0;
+                    state <= STATUS_START;
                 end
                 default: begin
                     cs_n <= 1;

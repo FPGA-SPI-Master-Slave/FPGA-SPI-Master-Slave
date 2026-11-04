@@ -14,7 +14,7 @@ module master_controller #(
 );
     localparam IDLE=0, STATUS_START=1, STATUS_WAIT=2, RESPONSE_START=3,
                RESPONSE_WAIT=4, SEND_START=5, SEND_WAIT=6,
-               DATA_START=7, DATA_WAIT=8;
+               DATA_START=7, DATA_WAIT=8, RESTART=9;
     reg [3:0] state;
     reg [31:0] polls;
     always @(posedge clk) begin
@@ -82,7 +82,12 @@ module master_controller #(
                     sensor_data <= byte_rx;
                     data_valid <= 1;
                     cs_n <= 1;
-                    state <= IDLE;
+                    polls <= 0;
+                    state <= RESTART;
+                end
+                RESTART: begin
+                    cs_n <= 0;
+                    state <= STATUS_START;
                 end
                 default: begin
                     cs_n <= 1;

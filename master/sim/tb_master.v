@@ -3,7 +3,7 @@ module tb_master;
     // 프로토콜 기대값을 독립적으로 지정함.
     localparam [7:0] STATUS = 8'h10, SEND = 8'h20,
                      BUSY = 8'h00, READY = 8'h01, DUMMY = 8'h00;
-    reg clk = 0, btnC = 0, btnD = 1, miso = 0;
+    reg clk = 0, start = 0, reset = 1, miso = 0;
     wire sclk, mosi, cs_n;
     wire [15:0] led;
     integer scenario = 0, byte_index = 0, bit_index = 0, polls = 0;
@@ -13,7 +13,7 @@ module tb_master;
     time last_edge, last_fall;
     always #5 clk = ~clk;
     master_top #(.STABLE_CYCLES(4), .MAX_POLLS(3)) dut (
-        .clk(clk), .btnC(btnC), .btnD(btnD), .spi_miso(miso),
+        .clk(clk), .start(start), .reset(reset), .spi_miso(miso),
         .spi_sclk(sclk), .spi_mosi(mosi), .spi_cs_n(cs_n), .led(led));
 
     // 상승 에지에서 MOSI를 받고 하강 에지에서 응답을 갱신함.
@@ -50,7 +50,7 @@ module tb_master;
                 end
                 2: begin
                     if (complete_byte !== SEND) $fatal(1, "Expected SEND");
-                    response = 8'ha5; byte_index = 3;
+                    response = 8'ha4 + transactions; byte_index = 3;
                 end
                 3: begin
                     if (complete_byte !== DUMMY) $fatal(1, "Expected dummy data byte");
@@ -67,27 +67,35 @@ module tb_master;
     end
     task press_button;
         begin
-            @(negedge clk); btnC = 1;
+            @(negedge clk); start = 1;
             repeat (12) @(negedge clk);
-            btnC = 0;
+            start = 0;
             repeat (12) @(negedge clk);
         end
     endtask
     initial begin
-        repeat (5) @(negedge clk); btnD = 0;
+        repeat (5) @(negedge clk); reset = 0;
         repeat (10) @(negedge clk);
         press_button;
-        wait(cs_n == 0); wait(cs_n == 1); #20;
+        wait(cs_n == 0); wait(cs_n == 1); #1;
         if (byte_index != 4 || polls != 3 || led[7:0] !== 8'ha5 || led[9:8] !== 0)
-            $fatal(1, "Normal transaction failed: bytes=%0d polls=%0d leds=%h", byte_index, polls, led);
+            $fatal(1, "First transaction failed");
+        wait(cs_n == 0); wait(cs_n == 1); #1;
+        if (transactions != 2 || led[7:0] !== 8'ha6 || led[9:8] !== 0)
+            $fatal(1, "Continuous transaction failed");
+        reset = 1;
+        repeat (5) @(negedge clk);
+        reset = 0;
+        repeat (10) @(negedge clk);
+        if (cs_n !== 1) $fatal(1, "Reset did not stop continuous transfers");
         scenario = 1; press_button;
         wait(cs_n == 0); wait(cs_n == 1); #20;
-        if (polls != 3 || led[9:8] !== 2'b01 || led[7:0] !== 8'ha5)
+        if (polls != 3 || led[9:8] !== 2'b01 || led[7:0] !== 8'h00)
             $fatal(1, "Timeout failed polls=%0d leds=%h", polls, led);
         scenario = 2; press_button;
         wait(cs_n == 0); wait(cs_n == 1); #20;
         if (polls != 1 || led[9:8] !== 2'b10) $fatal(1, "Protocol error failed leds=%h", led);
-        $display("PASS: BUSY x2 -> READY -> A5, timeout, invalid response; 1 MHz high and low phases");
+        $display("PASS: repeated transfers, reset, timeout, invalid response; 1 MHz high and low phases");
         $finish;
     end
     initial begin #500000; $fatal(1, "Simulation watchdog expired"); end
