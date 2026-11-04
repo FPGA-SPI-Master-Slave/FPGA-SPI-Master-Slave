@@ -1,8 +1,11 @@
 `timescale 1ns / 1ps
 module tb_master;
     // 프로토콜 기대값을 독립적으로 지정함.
-    localparam [7:0] STATUS = 8'h10, SEND = 8'h20,
-                     BUSY = 8'h00, READY = 8'h01, DUMMY = 8'h00;
+    localparam [7:0] STATUS = 8'h10, 
+                     SEND = 8'h20,
+                     BUSY = 8'h00, 
+                     READY = 8'h01, 
+                     DUMMY = 8'h00;
     reg clk = 0, start = 0, reset = 1, miso = 0;
     wire sclk, mosi, cs_n;
     wire [15:0] led;
@@ -11,7 +14,9 @@ module tb_master;
     reg [7:0] received = 0, response = 0;
     reg [7:0] complete_byte, status_value;
     time last_edge, last_fall;
+
     always #5 clk = ~clk;
+
     master_top #(.STABLE_CYCLES(4), .MAX_POLLS(3)) dut (
         .clk(clk), .start(start), .reset(reset), .spi_miso(miso),
         .spi_sclk(sclk), .spi_mosi(mosi), .spi_cs_n(cs_n), .led(led));

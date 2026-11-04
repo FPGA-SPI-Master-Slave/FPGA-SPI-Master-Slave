@@ -22,6 +22,8 @@ MSB first, Mode 0. 명령 바이트를 전송할 때의 MISO는 무시하고, �
 
 ## Vivado 사용
 
-작업은 `spi_master/spi_master.srcs` 내부에서 진행합니다. RTL은 `sources_1/new`, XDC는 `constrs_1/imports/digilent-xdc-master/Basys3-Master_orginal.xdc`, 테스트벤치는 `sim_1/new/tb_master.v`에 있으며 Vivado 프로젝트에서 이 파일들을 참조합니다. 설계 top은 `master_top`, 시뮬레이션 top은 `tb_master`입니다. Git 관리용 복사본은 각각 `src`, `constraints`, `sim`에 보관하며 변경할 때 내용을 비교하고 반영합니다. 프로젝트 내부 파일과 같은 모듈의 Git 관리 복사본을 함께 컴파일하지 마세요. 핀과 클럭 제약 및 비트스트림 설정은 해당 XDC 하나에 통합되어 있습니다. `.xpr`은 Git에서 무시되므로 다른 환경에서 프로젝트를 다시 구성할 때는 소스 등록이 필요합니다. JA1=SCLK, JA2=MOSI, JA3=MISO, JA4=CS_n, 공통 GND 및 3.3 V I/O입니다. 보드와 연결 장치의 전압 및 신호 연결을 확인하세요.
+Git에서 관리하는 설계 소스는 `src`, 핀 제약은 `constraints`, 테스트벤치는 `sim`에 있습니다. Vivado에서 새 프로젝트를 만들 때 `src`의 `button_debounce10ms.v`, `master_byte.v`, `master_controller.v`, `master_top.v`를 설계 소스로, `constraints/Basys3-Master_orginal.xdc`를 제약 파일로, `sim/tb_master.v`를 시뮬레이션 소스로 추가합니다. 설계 top은 `master_top`, 시뮬레이션 top은 `tb_master`입니다.
+
+기존 로컬 Vivado 프로젝트는 `spi_master/spi_master.srcs`의 복사본을 참조할 수 있습니다. 이 폴더는 Git에서 제외하므로, 기존 프로젝트에서도 위 Git 관리 파일을 직접 참조하도록 소스 등록을 바꿔야 변경 사항이 일치합니다. 동일 모듈의 두 복사본을 함께 등록하지 마세요. `.xpr`도 Git에서 제외됩니다. JA1=SCLK, JA2=MOSI, JA3=MISO, JA4=CS_n, 공통 GND 및 3.3 V I/O입니다. 보드와 연결 장치의 전압 및 신호 연결을 확인하세요.
 
 시뮬레이션은 버튼 한 번으로 `A5`, `A6` 연속 수신, reset으로 중단, BUSY timeout, 미정의 응답, 각 바이트 내 1 MHz SCLK의 high/low 시간을 검사합니다. 테스트벤치는 디바운스 시간을 줄여 실행하며 SCLK는 실제 1 MHz로 유지합니다. 실제 하드웨어의 외부 장치 입출력 타이밍은 Slave의 데이터시트 및 배선에 맞춰 별도로 검증해야 합니다.
