@@ -55,11 +55,19 @@ module tb_master;
                 end
                 2: begin
                     if (complete_byte !== SEND) $fatal(1, "Expected SEND");
-                    response = 8'ha4 + transactions; byte_index = 3;
+                    response = 8'h12; byte_index = 3;
                 end
                 3: begin
                     if (complete_byte !== DUMMY) $fatal(1, "Expected dummy data byte");
-                    byte_index = 4; response = 0;
+                    byte_index = 4; response = 8'ha4 + transactions;
+                end
+                4: begin
+                    if (complete_byte !== DUMMY) $fatal(1, "Expected dummy low byte");
+                    byte_index = 5; response = 8'h5a;
+                end
+                5: begin
+                    if (complete_byte !== DUMMY) $fatal(1, "Expected dummy status byte");
+                    byte_index = 6; response = 0;
                 end
                 default: $fatal(1, "Unexpected byte");
             endcase
@@ -83,10 +91,12 @@ module tb_master;
         repeat (10) @(negedge clk);
         press_button;
         wait(cs_n == 0); wait(cs_n == 1); #1;
-        if (byte_index != 4 || polls != 3 || led[7:0] !== 8'ha5 || led[9:8] !== 0)
+        if (byte_index != 6 || polls != 3 || led[7:0] !== 8'ha5 || led[9:8] !== 0 ||
+            dut.distance_high !== 8'h12 || dut.distance_low !== 8'ha5 || dut.distance_status !== 8'h5a)
             $fatal(1, "First transaction failed");
         wait(cs_n == 0); wait(cs_n == 1); #1;
-        if (transactions != 2 || led[7:0] !== 8'ha6 || led[9:8] !== 0)
+        if (transactions != 2 || led[7:0] !== 8'ha6 || led[9:8] !== 0 ||
+            dut.distance_high !== 8'h12 || dut.distance_low !== 8'ha6 || dut.distance_status !== 8'h5a)
             $fatal(1, "Continuous transaction failed");
         reset = 1;
         repeat (5) @(negedge clk);

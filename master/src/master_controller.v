@@ -17,7 +17,10 @@ module master_controller #(
     output reg byte_start, 
     output reg [7:0] byte_tx, 
     output reg cs_n,
-    output reg [7:0] sensor_data, 
+    output reg [7:0] sensor_data,
+    output reg [7:0] distance_high,
+    output reg [7:0] distance_low,
+    output reg [7:0] distance_status,
     output reg data_valid,
     output reg timeout, 
     output reg protocol_error
@@ -31,10 +34,13 @@ module master_controller #(
                SEND_START=5, 
                SEND_WAIT=6,
                DATA_START=7, 
-               DATA_WAIT=8, RESTART=9;
+               DATA_WAIT=8, RESTART=9,
+               DATA_LOW_START=10, DATA_LOW_WAIT=11,
+               DATA_STATUS_START=12, DATA_STATUS_WAIT=13;
 
     reg [3:0] state;
     reg [31:0] polls;
+    reg [7:0] high_pending, low_pending;
 
     always @(posedge clk) begin
         if (reset) begin
@@ -43,6 +49,11 @@ module master_controller #(
             byte_start <= 0;
             byte_tx <= 0;
             sensor_data <= 0;
+            distance_high <= 0;
+            distance_low <= 0;
+            distance_status <= 0;
+            high_pending <= 0;
+            low_pending <= 0;
             data_valid <= 0;
             timeout <= 0;
             protocol_error <= 0;
@@ -102,7 +113,28 @@ module master_controller #(
                     state <= DATA_WAIT;
                 end
                 DATA_WAIT: if (byte_done) begin
-                    sensor_data <= byte_rx;
+                    high_pending <= byte_rx;
+                    state <= DATA_LOW_START;
+                end
+                DATA_LOW_START: begin
+                    byte_tx <= DUMMY;
+                    byte_start <= 1;
+                    state <= DATA_LOW_WAIT;
+                end
+                DATA_LOW_WAIT: if (byte_done) begin
+                    low_pending <= byte_rx;
+                    state <= DATA_STATUS_START;
+                end
+                DATA_STATUS_START: begin
+                    byte_tx <= DUMMY;
+                    byte_start <= 1;
+                    state <= DATA_STATUS_WAIT;
+                end
+                DATA_STATUS_WAIT: if (byte_done) begin
+                    distance_high <= high_pending;
+                    distance_low <= low_pending;
+                    distance_status <= byte_rx;
+                    sensor_data <= low_pending;
                     data_valid <= 1;
                     cs_n <= 1;
                     polls <= 0;

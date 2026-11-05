@@ -25,6 +25,7 @@ module master_top #(
     wire reset_synced = reset_sync[1];
     wire press, button_level, byte_start, byte_done, byte_busy;
     wire [7:0] byte_tx, byte_rx, sensor_data;
+    wire [7:0] distance_high, distance_low, distance_status;
     wire data_valid, timeout, protocol_error;
 
     // 버튼 디바운스 모듈 안에 parameter 지정 STABLE_CYCLES
@@ -54,6 +55,9 @@ module master_top #(
         .byte_tx(byte_tx), 
         .cs_n(spi_cs_n),
         .sensor_data(sensor_data), 
+        .distance_high(distance_high),
+        .distance_low(distance_low),
+        .distance_status(distance_status),
         .data_valid(data_valid), .timeout(timeout),
         .protocol_error(protocol_error)
     );
