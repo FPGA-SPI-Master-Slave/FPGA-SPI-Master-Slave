@@ -19,7 +19,7 @@ module hcsr04_controller #(
     output reg hcsr04_done  //측정 종료 신호(정상/타임 아웃/범위 초과)
     );
 
-    localparam [2:0]
+    localparam [2:0] 
         S_IDLE = 3'd0,
         S_TRIGGER = 3'd1,
         S_WAIT_ECHO = 3'd2,
@@ -72,7 +72,7 @@ module hcsr04_controller #(
             S_IDLE:
                 if(start)
                     next_state = S_TRIGGER;
-
+            
             S_TRIGGER:
                 if(tick && trig_count_us == TRIG_US - 1)
                     next_state = S_WAIT_ECHO;
@@ -92,9 +92,9 @@ module hcsr04_controller #(
             S_CALCULATE: next_state = S_REPORT;
 
             S_REPORT: next_state = S_IDLE;
-
+            
             default: next_state = S_IDLE;
-        endcase
+        endcase      
     end
 
     //측정 FSM
@@ -123,7 +123,7 @@ module hcsr04_controller #(
                         echo_count_us <= 16'd0;
                     end
                 end
-
+                
                 S_TRIGGER: begin
                     if(tick) begin
                         if(trig_count_us == TRIG_US - 1) begin
@@ -141,7 +141,7 @@ module hcsr04_controller #(
                         echo_count_us <= 16'd0;
                     else if(tick && wait_count_us != TIMEOUT_US - 1)
                         wait_count_us <= wait_count_us + 1'b1;
-
+                    
                     if(!echo_rise && tick && wait_count_us == TIMEOUT_US -1) begin
                         distance_cm <= 16'd0;
                         status <= ST_NO_ECHO;
@@ -176,7 +176,7 @@ module hcsr04_controller #(
                 default: trig <= 1'b0;
             endcase
         end
-
+        
     end
 
 endmodule

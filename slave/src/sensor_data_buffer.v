@@ -31,6 +31,6 @@ module sensor_data_buffer(
                 valid <= 1'b1;
                 sh_buf_updated <= 1'b1;
             end
-        end
+        end     
     end
 endmodule

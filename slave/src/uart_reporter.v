@@ -61,7 +61,7 @@ module uart_reporter (
             default:         status_length = 5'd7;   // NO_DATA
         endcase
     end
-    /*
+    /* 
         상태 문구에서 한 문자 선택
         index는 상태 문구의 첫 글자 기준으로 0부터 시작
     */
@@ -139,7 +139,7 @@ module uart_reporter (
         end
     endfunction
 
-    /*
+    /* 
     현재 보낼 문자 선택
     0~13: "DIST=0123 cm, "
     14~ : 상태 문구

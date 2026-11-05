@@ -1,15 +1,19 @@
 `timescale 1ns / 1ps
 
-module top_sensor(
+module top(
     input clk,
     input reset,
     input echo,
+    input sclk,
+    input cs_n,
+    input mosi,
     output trig,
-    output uart_tx
+    output uart_tx,
+    output miso
     );
 
     wire w_1us_tick;
-
+    
     wire w_busy, w_start;
     wire [15:0] w_measured_dist;
     wire [2:0] w_measured_status;
@@ -19,6 +23,10 @@ module top_sensor(
     wire [2:0] w_buffered_status;
     wire w_buffer_valid;
     wire w_buffer_updated;
+
+    
+    wire [18:0] w_hcsr04_snapshot;  //CDC 후 {거리[15:0], 상태[2:0]}
+    wire w_hcsr04_snapshot_valid;
 
     wire w_fifo_read;
     wire [18:0] w_fifo_data;
@@ -41,7 +49,7 @@ module top_sensor(
     );
 
     measure_scheduler #(
-    .MEASURE_PERIOD_US(100_000)
+        .MEASURE_PERIOD_US(100_000)
     ) u_measure_scheduler (
     .clk   (clk),
     .reset (reset),
@@ -76,6 +84,31 @@ module top_sensor(
         .status(w_buffered_status),
         .valid(w_buffer_valid),
         .sh_buf_updated(w_buffer_updated)
+    );
+
+    sensor_cdc_bridge u_sensor_cdc_bridge (
+        .clk                   (clk),
+        .sclk                  (sclk),
+        .reset                 (reset),
+
+        .hcsr04_dist           (w_buffered_hcsr04_dist),
+        .hcsr04_status         (w_buffered_status),
+        .hcsr04_valid          (w_buffer_valid),
+
+        .hcsr04_updated        (w_buffer_updated),
+        .hcsr04_snapshot       (w_hcsr04_snapshot),
+        .hcsr04_snapshot_valid (w_hcsr04_snapshot_valid)
+    );
+
+    spi_slave u_spi_slave (
+        .sclk  (sclk),
+        .reset (reset),
+        .cs_n  (cs_n),
+        .mosi  (mosi),
+        .hcsr04_snapshot(w_hcsr04_snapshot),
+        .hcsr04_snapshot_valid(w_hcsr04_snapshot_valid),
+
+        .miso  (miso)
     );
 
     sensor_result_fifo u_sensor_result_fifo (

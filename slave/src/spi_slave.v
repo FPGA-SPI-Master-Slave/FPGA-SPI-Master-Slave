@@ -5,6 +5,10 @@ module spi_slave(
     input reset,
     input cs_n,     //Active Low
     input mosi,     //Master -> Slave
+
+    input [18:0] hcsr04_snapshot,
+    input hcsr04_snapshot_valid,
+
     output miso     //Slave -> Master
     );
     //상태 정의
@@ -16,7 +20,7 @@ module spi_slave(
     localparam [7:0] CMD_SEND   = 8'h20;
 
     localparam [7:0] RESP_READY = 8'h01;
-    localparam [7:0] TEST_DATA  = 8'hA5;
+    localparam [7:0] RESP_BUSY = 8'h02;
     
     reg r_state;            //명령 수신/응답 송신 상태
     reg [2:0] r_bit_cnt;    //8비트 송/수신 카운트
@@ -26,9 +30,8 @@ module spi_slave(
     reg r_rx_valid;         //rx 바이트 수신 완료(S_CMD일때)
 
     reg [7:0] r_tx_shift;   //tx shift reg.
-    reg [7:0] r_tx_buf = TEST_DATA;     //tx 최신 데이터 보관 버퍼
 
-    reg [7:0] r_response;   // 명령에 따라 응답할 값 보관(status의 응답이면 READY/BUSY send의 응답이면 tx_buf)
+    reg [7:0] r_response;   // 명령에 따라 응답할 값 보관(CMD_STATUS: READY/BUSY CMD_SEND: snapshot)
     reg r_tx_load;          //tx buf에서 tx shift regi로 응답 로드 지시
 
     wire [7:0] w_rx_byte;
@@ -36,6 +39,10 @@ module spi_slave(
 
     wire w_spi_reset;
     assign w_spi_reset = reset | cs_n;  //reset또는 cs 비활성화 시 SPI 프레임 초기화
+
+    reg [18:0] r_send_frame;        // 현재 SEND 값: 3바이트 동안 고정
+    reg [1:0] r_bytes_remaining;    // 남은 응답 바이트 수
+
 
     //SCLK 상승 에지에서 명령에 따라 응답 선택
     always @(posedge sclk, posedge w_spi_reset) begin
@@ -47,6 +54,8 @@ module spi_slave(
             r_rx_valid <= 1'b0;
             r_response <= 8'h00;
             r_tx_load <= 1'b0;
+            r_send_frame <= 19'd0;
+            r_bytes_remaining <= 2'd0;
         end else begin
             r_rx_valid <= 1'b0;
             r_tx_load <= 1'b0;
@@ -63,11 +72,24 @@ module spi_slave(
                         r_rx_valid <= 1'b1;     //수신 완료
 
                         case (w_rx_byte)    //명령
-                            CMD_STATUS: //통신 연결 테스트용, CDC 미구현, 항상 ready 송신
-                                r_response <= RESP_READY;
-                            CMD_SEND: 
-                                r_response <= r_tx_buf;  //테스트용 데이터 8'hA5
-                            default: r_response <= 8'h00;   //알 수 없는 명령
+                            CMD_STATUS: begin//통신 연결 테스트용, CDC 미구현, 항상 ready 송신
+                                r_response <= hcsr04_snapshot_valid
+                                            ? RESP_READY : RESP_BUSY;
+                                r_bytes_remaining <= 2'd1;
+                            end
+                            CMD_SEND: begin
+                                //응답 3바이트 동안 같은 측정 결과를 사용
+                                r_send_frame <= hcsr04_snapshot_valid
+                                                ? hcsr04_snapshot : 19'd0;
+                                //첫 바이트는 입력에서 직접 선택
+                                r_response <= hcsr04_snapshot_valid
+                                            ? hcsr04_snapshot[18:11] : 8'h00;
+                                r_bytes_remaining <= 2'd3;
+                            end
+                            default: begin
+                                r_response <= 8'h00;   //알 수 없는 명령 응답
+                                r_bytes_remaining <= 2'd1;
+                            end
                         endcase
 
                         r_tx_load <= 1'b1;  // 명령에 따라 선택한 response를 다음 하강 에지에서 로드하도록
@@ -76,8 +98,31 @@ module spi_slave(
                 end
 
                 S_RESP: begin
-                    if(r_bit_cnt == 3'd7) 
-                        r_state <= S_CMD;   //RESP 중에는 mosi 무시. 명령으로 해석하지 않고 8비트 dummy 처리, 명령 수신 모드로 전환
+                    if(r_bit_cnt == 3'd7) begin
+                        case (r_bytes_remaining)
+                            2'd3: begin
+                                r_response <= r_send_frame[10:3];
+                                r_bytes_remaining <= 2'd2;
+                                r_tx_load <= 1'b1;
+                            end
+
+                            2'd2: begin
+                                r_response <= {5'b0, r_send_frame[2:0]};
+                                r_bytes_remaining <= 2'd1;
+                                r_tx_load <= 1'b1;
+                            end
+
+                            2'd1: begin
+                                r_bytes_remaining <= 2'd0;
+                                r_state <= S_CMD;
+                            end
+
+                            default: begin
+                                r_bytes_remaining <= 2'd0;
+                                r_state <= S_CMD;
+                            end
+                        endcase
+                    end
                 end
             endcase
         end
