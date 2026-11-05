@@ -104,6 +104,8 @@ set_property -dict { PACKAGE_PIN G2   IOSTANDARD LVCMOS33 } [get_ports {miso}];#
 ##Pmod Header JXADC
 set_property -dict { PACKAGE_PIN J3   IOSTANDARD LVCMOS33 } [get_ports {trig}];#Sch name = XA1_P
 set_property -dict { PACKAGE_PIN L3   IOSTANDARD LVCMOS33 } [get_ports {echo}];#Sch name = XA2_P
+# echo에 내부 풀다운 적용
+set_property PULLDOWN true [get_ports echo]
 #set_property -dict { PACKAGE_PIN M2   IOSTANDARD LVCMOS33 } [get_ports {JXADC[2]}];#Sch name = XA3_P
 #set_property -dict { PACKAGE_PIN N2   IOSTANDARD LVCMOS33 } [get_ports {JXADC[3]}];#Sch name = XA4_P
 #set_property -dict { PACKAGE_PIN K3   IOSTANDARD LVCMOS33 } [get_ports {JXADC[4]}];#Sch name = XA1_N
