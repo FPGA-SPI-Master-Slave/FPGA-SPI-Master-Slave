@@ -28,8 +28,8 @@ set_property -dict { PACKAGE_PIN R2    IOSTANDARD LVCMOS33 } [get_ports {reset}]
 
 
 ## LEDs
-# set_property -dict { PACKAGE_PIN U16   IOSTANDARD LVCMOS33 } [get_ports { ld0 }]
-# set_property -dict { PACKAGE_PIN E19   IOSTANDARD LVCMOS33 } [get_ports {led[1]}]
+set_property -dict { PACKAGE_PIN U16   IOSTANDARD LVCMOS33 } [get_ports {led[0]}]
+set_property -dict { PACKAGE_PIN E19   IOSTANDARD LVCMOS33 } [get_ports {led[1]}]
 # set_property -dict { PACKAGE_PIN U19   IOSTANDARD LVCMOS33 } [get_ports {led[2]}]
 # set_property -dict { PACKAGE_PIN V19   IOSTANDARD LVCMOS33 } [get_ports {led[3]}]
 # set_property -dict { PACKAGE_PIN W18   IOSTANDARD LVCMOS33 } [get_ports {led[4]}]
@@ -161,7 +161,7 @@ set_property BITSTREAM.CONFIG.CONFIGRATE 33 [current_design]
 set_property CONFIG_MODE SPIx4 [current_design]
 
 # 외부 SPI SCLK: 1MHz, 주기 1000ns
-create_clock -name spi_sclk -period 1000.000\-waveform {0.000 500.000} [get_ports sclk]
+create_clock -name spi_sclk -period 1000.000 -waveform {0.000 500.000} [get_ports sclk]
 
 # SCLK 입력에서 BUFG까지 일반 배선 사용 허용
 set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets sclk_IBUF]

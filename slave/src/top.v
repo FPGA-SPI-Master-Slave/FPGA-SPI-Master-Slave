@@ -9,7 +9,8 @@ module top(
     input mosi,
     output trig,
     output uart_tx,
-    output miso
+    output miso,
+    output [1:0] led
     );
 
     wire w_1us_tick;
@@ -109,6 +110,20 @@ module top(
         .hcsr04_snapshot_valid(w_hcsr04_snapshot_valid),
 
         .miso  (miso)
+    );
+
+    spi_act_led #(
+        .SYSCLK(100_000_000),
+        .SCLK_STALL_MS(100),
+        .HOLD_MS(200),
+        .BLINK_HALF_MS(100)
+    ) u_spi_act_led(
+        .clk(clk),
+        .sclk(sclk),
+        .reset(reset),
+        .cs_n(cs_n),
+        .activity_led(led[0]),
+        .sclk_stall_led(led[1])
     );
 
     sensor_result_fifo u_sensor_result_fifo (
