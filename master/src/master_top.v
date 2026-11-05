@@ -3,7 +3,13 @@
 module master_top #(
     parameter integer HALF_PERIOD = 50,
     parameter integer STABLE_CYCLES = 1000000,
-    parameter integer MAX_POLLS = 1000
+    parameter integer MAX_POLLS = 1000,
+    parameter integer OLED_RESET_CYCLES = 10000000,
+    parameter integer OLED_REFRESH_CYCLES = 10000000,
+    parameter [6:0] OLED_I2C_ADDRESS = 7'h3c,
+    parameter integer OLED_I2C_AUTO_ADDRESS = 1,
+    parameter integer OLED_I2C_QUARTER_PERIOD = 250,
+    parameter integer OLED_I2C_TIMEOUT_CYCLES = 1000000
 )(
     input clk, 
     input start, 
@@ -12,6 +18,8 @@ module master_top #(
     output spi_sclk, 
     output spi_mosi, 
     output spi_cs_n, 
+    inout wire sclk,
+    inout wire sda,
     output [15:0] led
 );
     // -------- 비동기 신호를 동기화하는데 사용 (동기화 회로) ---------
@@ -27,6 +35,10 @@ module master_top #(
     wire [7:0] byte_tx, byte_rx, sensor_data;
     wire [7:0] distance_high, distance_low, distance_status;
     wire data_valid, timeout, protocol_error;
+    wire slave_request;
+    wire oled_start, oled_done, oled_dc, oled_byte_error, oled_link_error;
+    wire oled_address_ack, oled_initialized;
+    wire [7:0] oled_tx;
 
     // 버튼 디바운스 모듈 안에 parameter 지정 STABLE_CYCLES
     // 괄호 안에 어떤 값을 쓸지 지정 
@@ -49,10 +61,11 @@ module master_top #(
         .clk(clk), 
         .reset(reset_synced), 
         .start(press), 
-        .byte_done(byte_done), 
+        .bus_request(slave_request), .bus_grant(1'b1),
+        .byte_done(byte_done),
         .byte_rx(byte_rx),
-        .byte_start(byte_start), 
-        .byte_tx(byte_tx), 
+        .byte_start(byte_start),
+        .byte_tx(byte_tx),
         .cs_n(spi_cs_n),
         .sensor_data(sensor_data), 
         .distance_high(distance_high),
@@ -60,6 +73,28 @@ module master_top #(
         .distance_status(distance_status),
         .data_valid(data_valid), .timeout(timeout),
         .protocol_error(protocol_error)
+    );
+
+    oled_controller #(
+        .RESET_CYCLES(OLED_RESET_CYCLES), .REFRESH_CYCLES(OLED_REFRESH_CYCLES)
+    ) oled_inst (
+        .clk(clk), .reset(reset_synced),
+        .distance({distance_high, distance_low}), .data_valid(data_valid),
+        .comm_error(timeout || protocol_error),
+        .byte_start(oled_start), .byte_tx(oled_tx), .byte_done(oled_done),
+        .byte_error(oled_byte_error), .dc(oled_dc), .link_error(oled_link_error),
+        .initialized(oled_initialized)
+    );
+
+    oled_i2c #(
+        .ADDRESS(OLED_I2C_ADDRESS), .QUARTER_PERIOD(OLED_I2C_QUARTER_PERIOD),
+        .AUTO_ADDRESS(OLED_I2C_AUTO_ADDRESS),
+        .TIMEOUT_CYCLES(OLED_I2C_TIMEOUT_CYCLES)
+    ) oled_i2c_inst (
+        .clk(clk), .reset(reset_synced),
+        .start(oled_start), .tx_data(oled_tx), .dc(oled_dc),
+        .scl(sclk), .sda(sda),
+        .busy(), .done(oled_done), .error(oled_byte_error), .address_ack(oled_address_ack)
     );
 
     master_byte #(
@@ -79,6 +114,8 @@ module master_top #(
         );
 
     // LED 8은 타임아웃, LED 9는 응답 오류를 표시함.
-    assign led = {6'b0, protocol_error, timeout, sensor_data};
+    // LED 10은 OLED의 I2C 응답 오류를 표시함.
+    // LED 11은 주소 응답, LED 12는 OLED 초기화 완료를 표시함.
+    assign led = {3'b0, oled_initialized, oled_address_ack, oled_link_error, protocol_error, timeout, sensor_data};
 
 endmodule

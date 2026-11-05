@@ -185,3 +185,8 @@ set_property -dict { PACKAGE_PIN J1 IOSTANDARD LVCMOS33 } [get_ports spi_sclk]
 set_property -dict { PACKAGE_PIN L2 IOSTANDARD LVCMOS33 } [get_ports spi_mosi]
 set_property -dict { PACKAGE_PIN J2 IOSTANDARD LVCMOS33 } [get_ports spi_miso]
 set_property -dict { PACKAGE_PIN G2 IOSTANDARD LVCMOS33 } [get_ports spi_cs_n]
+# OLED의 CS, 명령 구분, 리셋을 JA7/8/9에 연결함.
+# 기존 SPI OLED 배선을 대체하고 JB1/2에 I2C OLED를 연결함.
+# OLED
+set_property -dict { PACKAGE_PIN A14   IOSTANDARD LVCMOS33 } [get_ports {sclk}];#Sch name = JB1
+set_property -dict { PACKAGE_PIN A16   IOSTANDARD LVCMOS33 } [get_ports {sda}];#Sch name = JB2

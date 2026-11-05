@@ -12,6 +12,8 @@ module master_controller #(
     input clk, 
     input reset, 
     input start, 
+    input bus_grant,
+    output wire bus_request,
     input byte_done, 
     input [7:0] byte_rx,
     output reg byte_start, 
@@ -36,11 +38,12 @@ module master_controller #(
                DATA_START=7, 
                DATA_WAIT=8, RESTART=9,
                DATA_LOW_START=10, DATA_LOW_WAIT=11,
-               DATA_STATUS_START=12, DATA_STATUS_WAIT=13;
+               DATA_STATUS_START=12, DATA_STATUS_WAIT=13, ACQUIRE=14;
 
     reg [3:0] state;
     reg [31:0] polls;
     reg [7:0] high_pending, low_pending;
+    assign bus_request = (state == ACQUIRE) || !cs_n;
 
     always @(posedge clk) begin
         if (reset) begin
@@ -64,10 +67,13 @@ module master_controller #(
 
             case (state)
                 IDLE: if (start) begin
-                    cs_n <= 0;
                     polls <= 0;
                     timeout <= 0;
                     protocol_error <= 0;
+                    state <= ACQUIRE;
+                end
+                ACQUIRE: if (bus_grant) begin
+                    cs_n <= 0;
                     state <= STATUS_START;
                 end
                 STATUS_START: begin
@@ -141,8 +147,7 @@ module master_controller #(
                     state <= RESTART;
                 end
                 RESTART: begin
-                    cs_n <= 0;
-                    state <= STATUS_START;
+                    state <= ACQUIRE;
                 end
                 default: begin
                     cs_n <= 1;
