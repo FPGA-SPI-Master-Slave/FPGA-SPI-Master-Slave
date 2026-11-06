@@ -9,8 +9,8 @@
 
 
 ## Switches
-set_property -dict { PACKAGE_PIN V17   IOSTANDARD LVCMOS33 } [get_ports { a }]
-set_property -dict { PACKAGE_PIN V16   IOSTANDARD LVCMOS33 } [get_ports { b }]
+#set_property -dict { PACKAGE_PIN V17   IOSTANDARD LVCMOS33 } [get_ports {sw[0]}]
+#set_property -dict { PACKAGE_PIN V16   IOSTANDARD LVCMOS33 } [get_ports {sw[1]}]
 #set_property -dict { PACKAGE_PIN W16   IOSTANDARD LVCMOS33 } [get_ports {sw[2]}]
 #set_property -dict { PACKAGE_PIN W17   IOSTANDARD LVCMOS33 } [get_ports {sw[3]}]
 #set_property -dict { PACKAGE_PIN W15   IOSTANDARD LVCMOS33 } [get_ports {sw[4]}]
@@ -28,12 +28,12 @@ set_property -dict { PACKAGE_PIN V16   IOSTANDARD LVCMOS33 } [get_ports { b }]
 
 
 ## LEDs
-set_property -dict { PACKAGE_PIN U16   IOSTANDARD LVCMOS33 } [get_ports { ld0 }]
-# set_property -dict { PACKAGE_PIN E19   IOSTANDARD LVCMOS33 } [get_ports {led[1]}]
-# set_property -dict { PACKAGE_PIN U19   IOSTANDARD LVCMOS33 } [get_ports {led[2]}]
-# set_property -dict { PACKAGE_PIN V19   IOSTANDARD LVCMOS33 } [get_ports {led[3]}]
-# set_property -dict { PACKAGE_PIN W18   IOSTANDARD LVCMOS33 } [get_ports {led[4]}]
-# set_property -dict { PACKAGE_PIN U15   IOSTANDARD LVCMOS33 } [get_ports {led[5]}]
+#set_property -dict { PACKAGE_PIN U16   IOSTANDARD LVCMOS33 } [get_ports {led[0]}]
+#set_property -dict { PACKAGE_PIN E19   IOSTANDARD LVCMOS33 } [get_ports {led[1]}]
+#set_property -dict { PACKAGE_PIN U19   IOSTANDARD LVCMOS33 } [get_ports {led[2]}]
+#set_property -dict { PACKAGE_PIN V19   IOSTANDARD LVCMOS33 } [get_ports {led[3]}]
+#set_property -dict { PACKAGE_PIN W18   IOSTANDARD LVCMOS33 } [get_ports {led[4]}]
+#set_property -dict { PACKAGE_PIN U15   IOSTANDARD LVCMOS33 } [get_ports {led[5]}]
 #set_property -dict { PACKAGE_PIN U14   IOSTANDARD LVCMOS33 } [get_ports {led[6]}]
 #set_property -dict { PACKAGE_PIN V14   IOSTANDARD LVCMOS33 } [get_ports {led[7]}]
 #set_property -dict { PACKAGE_PIN V13   IOSTANDARD LVCMOS33 } [get_ports {led[8]}]
@@ -157,3 +157,36 @@ set_property CFGBVS VCCO [current_design]
 set_property BITSTREAM.GENERAL.COMPRESS TRUE [current_design]
 set_property BITSTREAM.CONFIG.CONFIGRATE 33 [current_design]
 set_property CONFIG_MODE SPIx4 [current_design]
+
+## SPI 마스터 핀 및 클럭 제약
+# Basys 3의 100 MHz 클럭, 버튼, LED 및 JA Pmod 연결.
+set_property -dict { PACKAGE_PIN W5 IOSTANDARD LVCMOS33 } [get_ports clk]
+create_clock -name sys_clk -period 10.000 [get_ports clk]
+set_property -dict { PACKAGE_PIN U18 IOSTANDARD LVCMOS33 } [get_ports start]
+set_property -dict { PACKAGE_PIN U17 IOSTANDARD LVCMOS33 } [get_ports reset]
+set_property -dict { PACKAGE_PIN U16 IOSTANDARD LVCMOS33 } [get_ports {led[0]}]
+set_property -dict { PACKAGE_PIN E19 IOSTANDARD LVCMOS33 } [get_ports {led[1]}]
+set_property -dict { PACKAGE_PIN U19 IOSTANDARD LVCMOS33 } [get_ports {led[2]}]
+set_property -dict { PACKAGE_PIN V19 IOSTANDARD LVCMOS33 } [get_ports {led[3]}]
+set_property -dict { PACKAGE_PIN W18 IOSTANDARD LVCMOS33 } [get_ports {led[4]}]
+set_property -dict { PACKAGE_PIN U15 IOSTANDARD LVCMOS33 } [get_ports {led[5]}]
+set_property -dict { PACKAGE_PIN U14 IOSTANDARD LVCMOS33 } [get_ports {led[6]}]
+set_property -dict { PACKAGE_PIN V14 IOSTANDARD LVCMOS33 } [get_ports {led[7]}]
+set_property -dict { PACKAGE_PIN V13 IOSTANDARD LVCMOS33 } [get_ports {led[8]}]
+set_property -dict { PACKAGE_PIN V3 IOSTANDARD LVCMOS33 } [get_ports {led[9]}]
+set_property -dict { PACKAGE_PIN W3 IOSTANDARD LVCMOS33 } [get_ports {led[10]}]
+set_property -dict { PACKAGE_PIN U3 IOSTANDARD LVCMOS33 } [get_ports {led[11]}]
+set_property -dict { PACKAGE_PIN P3 IOSTANDARD LVCMOS33 } [get_ports {led[12]}]
+set_property -dict { PACKAGE_PIN N3 IOSTANDARD LVCMOS33 } [get_ports {led[13]}]
+set_property -dict { PACKAGE_PIN P1 IOSTANDARD LVCMOS33 } [get_ports {led[14]}]
+set_property -dict { PACKAGE_PIN L1 IOSTANDARD LVCMOS33 } [get_ports {led[15]}]
+# JA1/2/3/4는 SCLK/MOSI/MISO/CS_n에 연결. 공통 접지와 3.3 V 사용.
+set_property -dict { PACKAGE_PIN J1 IOSTANDARD LVCMOS33 } [get_ports spi_sclk]
+set_property -dict { PACKAGE_PIN L2 IOSTANDARD LVCMOS33 } [get_ports spi_mosi]
+set_property -dict { PACKAGE_PIN J2 IOSTANDARD LVCMOS33 } [get_ports spi_miso]
+set_property -dict { PACKAGE_PIN G2 IOSTANDARD LVCMOS33 } [get_ports spi_cs_n]
+# OLED의 CS, 명령 구분, 리셋을 JA7/8/9에 연결함.
+# 기존 SPI OLED 배선을 대체하고 JB1/2에 I2C OLED를 연결함.
+# OLED
+set_property -dict { PACKAGE_PIN A14   IOSTANDARD LVCMOS33 } [get_ports {sclk}];#Sch name = JB1
+set_property -dict { PACKAGE_PIN A16   IOSTANDARD LVCMOS33 } [get_ports {sda}];#Sch name = JB2

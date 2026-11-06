@@ -27,3 +27,8 @@
 **/*.hw/
 **/ip_user_files/
 **/xsim.dir/
+
+# Agents.md
+AGENTS.md
+# 로컬 Vivado 프로젝트 및 복사본
+/master/spi_master/
