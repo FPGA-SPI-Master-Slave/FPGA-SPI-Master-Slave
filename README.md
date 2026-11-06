@@ -1,15 +1,33 @@
 # FPGA SPI Master/Slave
 
-Vivado 2020.2 기반 Basys3 FPGA 프로젝트입니다. 현재 저장소에는 SPI Slave와 HC-SR04 거리 측정 결과를 UART로 출력하는 별도 경로가 있습니다.
+Vivado 2020.2 / Basys3 기반 프로젝트입니다. 현재 `spi-slave` 브랜치는 HC-SR04 거리 측정 결과를 SPI와 UART로 출력
 
-## SPI Slave
+- 최상위 모듈: `slave_top` (`slave/src/slave_top.v`)
+- 핀 제약: `slave/constraints/Basys3-Master_orginal.xdc`
+- 시스템 클럭: 100 MHz / SPI SCLK 제약: 1 MHz
 
-`slave/src/spi_slave.v`는 SPI Mode 0, MSB 우선 8비트 전송을 처리합니다. `STATUS` (`8'h10`)에는 `8'h01`, `SEND` (`8'h20`)에는 `8'hA5`, 그 외 명령에는 `8'h00`을 응답합니다. 명령 전송 후 Dummy 1바이트로 응답을 읽습니다. 테스트벤치는 `slave/sim/tb_spi_slave_test.v`에 있습니다.
+## 거리 측정
 
-## HC-SR04 → UART
+100 ms 주기로 측정을 시작하며, Trig는 10 µs, Echo 대기·측정 제한은 각각 30 ms입니다. Echo HIGH 시간(µs)을 58로 나누어 정수 거리(cm)를 계산하고, 2~400 cm를 정상으로 판정.
 
-`slave/src/top.v`의 `top_sensor`는 100 MHz 클럭에서 1 µs enable을 만들고, 100 ms마다 측정을 시작합니다. Trig는 10 µs이며 Echo 상승 대기와 HIGH 측정은 각각 30 ms로 제한합니다. HIGH 시간을 58로 나눈 정수 cm 값 중 2~400 cm를 정상으로 판정합니다.
+최신 측정값은 버퍼에서 CDC 요청·응답 핸드셰이크를 거쳐 SPI로 전달되며, 별도의 4건 FIFO를 통해 UART로도 출력
 
-측정 결과는 최신값 버퍼와 4건 깊이의 FIFO를 거쳐 115200 bps, 8N1 UART로 출력됩니다. 출력 형식은 `DIST=0123 cm, OK\r\n`이며 오류 상태는 `NO_ECHO`, `ECHO_TIMEOUT`, `RANGE_ERROR`로 표시됩니다.
+## SPI 통신
 
-이 UART 경로는 현재 SPI Slave와 연결되지 않았습니다. 기존 `slave/constraints/Basys3-Master_orginal.xdc`도 SPI Slave용 핀 설정이므로 `top_sensor` 보드 사용에는 별도 핀 제약이 필요합니다.
+Mode 0, MSB 우선, 8비트 단위입니다. CS를 LOW로 유지한 상태에서 명령을 보내고, Dummy 바이트를 전송해 응답을 읽음
+
+| 명령 | 값 | 응답 |
+| --- | --- | --- |
+| STATUS | `0x10` | 1바이트: 유효 스냅샷이 있으면 READY(`0x01`), 없으면 BUSY(`0x02`) |
+| SEND | `0x20` | 3바이트: 거리 상위 8비트 → 하위 8비트 → 상태(하위 3비트) |
+
+SEND 응답은 한 측정값으로 고정되며, 유효 스냅샷이 없으면 3바이트 모두 `0x00`입니다. CS가 HIGH이면 SPI 프레임은 초기화.
+
+측정 상태: `0`=NO_DATA, `1`=OK, `2`=NO_ECHO, `3`=ECHO_TIMEOUT, `4`=RANGE_ERROR.
+
+## UART 및 LED
+
+- UART: 115200 bps, 8N1. 출력 예: `DIST=0123 cm, OK\r\n`
+- `led[0]`: SPI 활동 표시. 마지막 활동 후 200 ms 동안 점멸을 유지
+- `led[1]`: CS가 LOW인 동안 SCLK 변화가 100 ms 이상 없으면 점등
+- 입력 안정화: `cs_n` 풀업, `echo` 풀다운을 적용
