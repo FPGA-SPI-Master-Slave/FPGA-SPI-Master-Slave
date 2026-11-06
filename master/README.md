@@ -2,7 +2,7 @@
 
 ## 구조 및 FSM
 
-`master_top`의 `start` 입력은 Basys 3의 btnC, `reset` 입력은 btnD에 연결합니다. `button_debounce10ms`의 1클럭 펄스로 `master_controller`를 시작합니다. Slave 통신은 전용 `master_byte`의 SPI를 사용하고, OLED는 `oled_controller`와 `oled_i2c`의 독립된 I²C를 사용합니다. 두 통신은 동시에 동작하며 OLED 초기화나 표시 때문에 Slave 수신이 대기하지 않습니다. `spi_bus.v`는 이전 SPI OLED 구조의 보관 파일이며 현재 top에서는 사용하지 않습니다. SPI 바이트 모듈은 100 MHz 클럭에서 50클럭마다 SCLK를 토글합니다. MOSI는 첫 상승 에지 전에 설정하고 이후 하강 에지에서 변경하며 MISO는 상승 에지에서 샘플링합니다.
+`master_top`의 `start` 입력은 Basys 3의 btnC, `reset` 입력은 btnD에 연결합니다. `button_debounce10ms`의 1클럭 펄스로 `master_controller`를 시작합니다. Slave 통신은 전용 `master_byte`의 SPI를 사용하고, OLED는 `oled_controller`와 `oled_i2c`의 독립된 I²C를 사용합니다. 두 통신은 동시에 동작하며 OLED 초기화나 표시 때문에 Slave 수신이 대기하지 않습니다. SPI 바이트 모듈은 100 MHz 클럭에서 50클럭마다 SCLK를 토글합니다. MOSI는 첫 상승 에지 전에 설정하고 이후 하강 에지에서 변경하며 MISO는 상승 에지에서 샘플링합니다.
 
 ```text
 IDLE --버튼/CS Low--> STATUS_START -> STATUS_WAIT
