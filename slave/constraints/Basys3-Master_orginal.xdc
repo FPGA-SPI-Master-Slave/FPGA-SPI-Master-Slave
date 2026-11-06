@@ -165,3 +165,7 @@ create_clock -name spi_sclk -period 1000.000 -waveform {0.000 500.000} [get_port
 
 # SCLK 입력에서 BUFG까지 일반 배선 사용 허용
 set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets sclk_IBUF]
+
+# 외부 SCLK를 데이터로 받는 LED 감시 회로의 첫 동기화 단계만 예외 처리
+# 두 번째 동기화 단계 및 SPI 내부 클럭 경로의 타이밍 검사는 유지
+set_false_path -to [get_pins {u_spi_act_led/sclk_sync1_reg/D}]

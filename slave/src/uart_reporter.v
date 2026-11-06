@@ -247,8 +247,13 @@ module uart_reporter (
                     // 4자리 십진수 ASCII 변환
                     digit_thousands <=
                         8'h30 + ((distance_snapshot / 16'd1000) % 10);
+                    //범위를 비교하여 ASCII 문자를 직접 선택하는 방식으로 변경
                     digit_hundreds <=
-                        8'h30 + ((distance_snapshot / 16'd100) % 10);
+                        (distance_snapshot >= 16'd400) ? 8'h34 :
+                        (distance_snapshot >= 16'd300) ? 8'h33 :
+                        (distance_snapshot >= 16'd200) ? 8'h32 :
+                        (distance_snapshot >= 16'd100) ? 8'h31 :
+                                                        8'h30;
                     digit_tens <=
                         8'h30 + ((distance_snapshot / 16'd10) % 10);
                     digit_ones <=

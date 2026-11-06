@@ -28,14 +28,14 @@ module sensor_result_fifo #(
     assign empty = (count == 0);
     assign full  = (count == DEPTH);
 
-    // 현재 FIFO 맨 앞의 데이터를 보여줍니다.
-    // empty일 때는 유효한 항목이 없으므로 0을 출력합니다.
+    // 현재 FIFO 맨 앞의 데이터
+    // empty일 때는 유효한 항목이 없으므로 0을 출력
     assign read_data = empty ? 19'd0 : memory[read_ptr];
 
     // 비어 있으면 읽지 않습니다.
     wire do_read = read_en && !empty;
 
-    // 가득 차 있어도 같은 클럭에 읽는다면 한 칸이 생기므로 쓸 수 있습니다.
+    // 가득 차 있어도 같은 클럭에 읽는다면 한 칸이 생기므로 쓰기 가능
     wire do_write = write_en && (!full || do_read);
 
     always @(posedge clk or posedge reset) begin
