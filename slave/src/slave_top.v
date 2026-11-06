@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-module top(
+module slave_top(
     input clk,
     input reset,
     input echo,
